@@ -55,7 +55,7 @@ class Album(Base):
             'id': self.id,
             'artist': self.artist,
             'year': self.year,
-            'genre': self.genre,
+            'genre': self.genre_id,
             'picture_url': self.picture_url,
             'catalog_id': self.catalog_id
         }
