@@ -61,3 +61,10 @@ List all genres:
 
 ```
 http://localhost:5000/genre/json
+
+```
+List album
+
+```
+http://localhost:5000/genre/<int:genre_id>/<int:album_id>/JSON
+
