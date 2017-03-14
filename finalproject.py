@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, jsonify, url_for, flash
+from flask import Flask, render_template, request
+from flask import redirect, jsonify, url_for, flash
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Album, Genre, User
@@ -36,8 +37,9 @@ def login():
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                     for x in xrange(32))
     login_session['state'] = state
-    #return "The current session state is %s" % login_session['state']
+# return "The current session state is %s" % login_session['state']
     return render_template('login.html', STATE=state)
+
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
@@ -91,8 +93,8 @@ def gconnect():
     stored_credentials = login_session.get('credentials')
     stored_gplus_id = login_session.get('gplus_id')
     if stored_credentials is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'),
-                                 200)
+        response = make_response(json.dumps
+                                 ('Current user is already connected.'), 200)
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -118,15 +120,16 @@ def gconnect():
         user_id = createUser(login_session)
 
     login_session['user_id'] = user_id
-
-
     output = ''
     output += '<h1>Welcome, '
     output += login_session['username']
     output += '!</h1>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    output += ''' " style = "width: 300px;
+                            height: 300px;border-radius: 150px;
+                            -webkit-border-radius:
+                            150px;-moz-border-radius: 150px;"> '''
     flash("you are now logged in as %s" % login_session['username'])
     print "done!"
     return output
@@ -145,7 +148,9 @@ def fbconnect():
         'web']['app_id']
     app_secret = json.loads(
         open('fb_client_secrets.json', 'r').read())['web']['app_secret']
-    url = 'https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=%s&client_secret=%s&fb_exchange_token=%s' % (
+    url = '''https://graph.facebook.com/oauth/access_token?
+            grant_type=fb_exchange_token&client_id=
+            %s&client_secret=%s&fb_exchange_token=%s''' % (
         app_id, app_secret, access_token)
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
@@ -154,7 +159,6 @@ def fbconnect():
     userinfo_url = "https://graph.facebook.com/v2.4/me"
     # strip expire tag from access token
     token = result.split("&")[0]
-
 
     url = 'https://graph.facebook.com/v2.4/me?%s&fields=name,id,email' % token
     h = httplib2.Http()
@@ -167,12 +171,15 @@ def fbconnect():
     login_session['email'] = data["email"]
     login_session['facebook_id'] = data["id"]
 
-    # The token must be stored in the login_session in order to properly logout, let's strip out the information before the equals sign in our token
+    # The token must be stored in the login_session in order to properly logout
+    # let's strip out the information before the equals sign in our token
+
     stored_token = token.split("=")[1]
     login_session['access_token'] = stored_token
 
     # Get user picture
-    url = 'https://graph.facebook.com/v2.4/me/picture?%s&redirect=0&height=200&width=200' % token
+    url = '''https://graph.facebook.com/
+            v2.4/me/picture?%s&redirect=0&height=200&width=200' % token'''
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
     data = json.loads(result)
@@ -192,7 +199,8 @@ def fbconnect():
     output += '!</h1>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    output += ''' " style = "width: 300px; height: 300px;border-radius:
+        150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '''
 
     flash("Now logged in as %s" % login_session['username'])
     return output
@@ -203,13 +211,11 @@ def fbdisconnect():
     facebook_id = login_session['facebook_id']
     # The access token must me included to successfully logout
     access_token = login_session['access_token']
-    url = 'https://graph.facebook.com/%s/permissions?access_token=%s' % (facebook_id,access_token)
+    url = ''''https://graph.facebook.com/%s/permissions?access_token=%s' %
+            (facebook_id, access_token)'''
     h = httplib2.Http()
     result = h.request(url, 'DELETE')[1]
     return "you have been logged out"
-
-
-
 
 # User Helper Functions
 
@@ -240,36 +246,38 @@ def getUserID(email):
 
 @app.route('/gdisconnect')
 def gdisconnect():
-  access_token = login_session['access_token']
-  print 'In gdisconnect access token is:'
-  print access_token
-  print 'User name is: '
-  print login_session['username']
-  if access_token is None:
-      print 'Access Token is None'
-      response = make_response(json.dumps('Current user not connected.'), 401)
-      response.headers['Content-Type'] = 'application/json'
-      return response
-  url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
-  h = httplib2.Http()
-  result = h.request(url, 'GET')[0]
-  print 'Google logout result is:'
-  print result
-  if result['status'] == '200':
-    del login_session['access_token']
-    del login_session['gplus_id']
-    del login_session['username']
-    del login_session['email']
-    del login_session['picture']
-    response = make_response(
-      json.dumps('Successfully disconnected.'), 200)
-    response.headers['Content-Type'] = 'application/json'
-    return response
-  else:
-    response = make_response(
-      json.dumps('Failed to revoke token for given user.', 400))
-    response.headers['Content-Type'] = 'application/json'
-    return response
+    access_token = login_session['access_token']
+    print 'In gdisconnect access token is:'
+    print access_token
+    print 'User name is: '
+    print login_session['username']
+    if access_token is None:
+        print 'Access Token is None'
+        response = make_response(json.dumps
+                                 ('Current user not connected.'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[0]
+    print 'Google logout result is:'
+    print result
+    if result['status'] == '200':
+        del login_session['access_token']
+        del login_session['gplus_id']
+        del login_session['username']
+        del login_session['email']
+        del login_session['picture']
+        response = make_response(
+            json.dumps('Successfully disconnected.'), 200)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    else:
+        response = make_response(
+            json.dumps('Failed to revoke token for given user.', 400))
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
 
 # JSON APIs to view Restaurant Information
@@ -277,20 +285,20 @@ def gdisconnect():
 def albumGenreJSON(genre_id):
     genre = session.query(Genre).filter_by(id=genre_id).one()
     albums = session.query(Album).filter_by(
-        genre_id = genre_id).all()
-    return jsonify(albums = [i.serialize for i in albums])
+        genre_id=genre_id).all()
+    return jsonify(albums=[i.serialize for i in albums])
 
 
 @app.route('/genre/<int:genre_id>/<int:album_id>/JSON')
 def albumJSON(genre_id, album_id):
     album = session.query(Album).filter_by(id=album_id).one()
-    return jsonify(album = album.serialize)
+    return jsonify(album=album.serialize)
 
 
 @app.route('/genre/JSON')
 def genresJSON():
     genres = session.query(Genre).all()
-    return jsonify(genres = [i.serialize for i in genres])
+    return jsonify(genres=[i.serialize for i in genres])
 
 
 # Show all Genres
@@ -300,9 +308,10 @@ def showGenres():
     album = session.query(Album).order_by(asc(Album.album_name))
     genres = session.query(Genre).order_by(asc(Genre.name))
     if 'username' not in login_session:
-        return render_template('genres.html',album = album, genres = genres)
+        return render_template('genres.html', album=album, genres=genres)
     else:
-        return render_template('genres.html', album = album, genres = genres)
+        return render_template('genres.html', album=album, genres=genres)
+
 # Create a new Genre
 
 
@@ -312,15 +321,16 @@ def newGenre():
         return redirect('/login')
     if request.method == 'POST':
         newGenre = Genre(
-            name=request.form['name'],picture_url=request.form['picture_url'], user_id=login_session['user_id'])
+            name=request.form['name'], picture_url=request.form['picture_url'],
+            user_id=login_session['user_id'])
         session.add(newGenre)
         flash('New Genre %s Has been added' % newGenre.name)
         session.commit()
         return redirect(url_for('showGenres'))
     else:
         return render_template('newgenre.html')
-
 # Edit a Genre
+
 
 @app.route('/genre/<int:genre_id>/edit/', methods=['GET', 'POST'])
 def editGenre(genre_id):
@@ -329,7 +339,9 @@ def editGenre(genre_id):
     if 'username' not in login_session:
         return redirect('/login')
     if editedGenre.user_id != login_session['user_id']:
-        return "<script>function myFunction() {alert('You are not authorized to edit this genre.');}</script><body onload='myFunction()''>"
+        return '''<script>function myFunction()
+        {alert('You are not authorized to edit this genre.');}
+        </script><body onload='myFunction()''>'''
     if request.method == 'POST':
         if request.form['name']:
             editedGenre.name = request.form['name']
@@ -347,7 +359,10 @@ def deleteGenre(genre_id):
     if 'username' not in login_session:
         return redirect('/login')
     if genreToDelete.user_id != login_session['user_id']:
-        return "<script>function myFunction() {alert('You are not authorized to delete this restaurant. Please create your own restaurant in order to delete.');}</script><body onload='myFunction()''>"
+        return '''<script>function myFunction()
+        {alert('You are not authorized to delete this genre.
+        Please create your own restaurant in order to delete.');}
+        </script><body onload='myFunction()''>'''
     if request.method == 'POST':
         session.delete(genreToDelete)
         flash('%s Successfully Deleted' % genreToDelete.name)
@@ -356,9 +371,8 @@ def deleteGenre(genre_id):
     else:
         return render_template('deleteGenre.html', genre=genreToDelete)
 
+
 # Show Album in Genre
-
-
 @app.route('/genre/<int:genre_id>/')
 @app.route('/genre/<int:genre_id>/album/')
 def showAlbum(genre_id):
@@ -368,9 +382,11 @@ def showAlbum(genre_id):
     albums = session.query(Album).filter_by(
         genre_id=genre_id).all()
     if 'username' not in login_session or creator.id != login_session['user_id']:
-        return render_template('album.html', albums=albums, genre=genre,genres = genres, creator=creator)
+        return render_template('album.html', albums=albums,
+                               genre=genre, genres=genres, creator=creator)
     else:
-        return render_template('album.html', albums=albums, genre=genre,genres = genres, creator=creator)
+        return render_template('album.html', albums=albums,
+                               genre=genre, genres=genres, creator=creator)
 
 
 # Insert a New Album
@@ -380,22 +396,20 @@ def newAlbum(genre_id):
         return redirect('/login')
     genre = session.query(Genre).filter_by(id=genre_id).one()
     if request.method == 'POST':
-            
-            newAlbum = Album(album_name=request.form['album_name'], 
-                            artist=request.form['artist'], 
-                            year=request.form['year'],
-                            picture_url=request.form['picture_url'],
-                            genre_id=genre_id,
-                            user_id=login_session['user_id'])
 
-            
+            newAlbum = Album(album_name=request.form['album_name'],
+                             artist=request.form['artist'],
+                             year=request.form['year'],
+                             picture_url=request.form['picture_url'],
+                             genre_id=genre_id,
+                             user_id=login_session['user_id'])
+
             session.add(newAlbum)
             session.commit()
             flash('New Album %s  Successfully Created' % (newAlbum.album_name))
             return redirect(url_for('showAlbum', genre_id=genre_id))
     else:
         return render_template('newAlbum.html', genre_id=genre_id)
-
 
 
 # Disconnect based on provider
@@ -419,10 +433,6 @@ def logout():
     else:
         flash("You were not logged in")
         return redirect(url_for('showGenres'))
-
-
-
-
 
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
