@@ -1,0 +1,31 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+
+
+  <div class="row banner menu">
+    <div class="col-md-11 col-md-offset-1 padding-none">
+      <h2>Edit Genre</h2>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6 col-md-offset-1 padding-top">
+      <form action="#" method = "POST" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="name">Genre:</label>
+          <input type ="text" maxlength="50" class="form-control" name="name" placeholder="Name of the Genre">
+
+          <label for ="picture_url">Genre Image URL:</label>
+          <input type="text" class="form-control" name = "picture_url" placeholder="Insert genre image url "> 
+
+
+          <button type="submit" class="btn btn-default active" id="submit" type="submit">
+          </span>Complete Edit</button>
+
+           <a href="{{url_for('showGenres', genre_id = genre.id)}}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+{% endblock %}

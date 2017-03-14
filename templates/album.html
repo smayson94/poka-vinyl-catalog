@@ -1,0 +1,66 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+
+
+  <div class = 'flash'>
+          {% with messages = get_flashed_messages() %}
+      {% if messages %}
+          
+        <ul>
+        {% for message in messages %}
+            <li> <strong> {{ message }} </strong> </li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+    {% endwith %}
+  </div>
+
+
+  <section id="portfolio">
+        <div class="container">
+            <div class="center">
+               <h2>Albums</h2>
+               <h3>{{genre.name}}</h3>
+               <p class="lead">Provides a catalog of albums of multiple differnt genres and eras</p>
+            </div>
+        
+
+            <ul class="portfolio-filter text-center">
+                <li><a class="btn btn-default active" href="{{url_for('newAlbum', genre_id = genre.id )}}">New Album</a></li>
+
+                <li><a class="btn btn-default active" href="{{url_for('editGenre', genre_id = genre.id )}}">Edit Genre</a></li>
+
+                <li><a class="btn btn-default active" href="{{url_for('deleteGenre', genre_id = genre.id )}}">Delete Genre</a></li>
+            </ul><!--/#portfolio-filter-->
+
+            <br>
+            <br>
+
+
+              <div class="row">
+
+              {% for album in albums %}
+                  <div class="portfolio-items">
+                    <div class="portfolio-item apps col-xs-12 col-sm-4 col-md-3">
+                        <div class="recent-work-wrap">
+                            <img class="img-responsive" src="{{album.picture_url}}" width="400px" height="400px">
+                            <div class="overlay">
+                                <div class="recent-work-inner">
+                                    <h3>{{album.artist}}</h3>
+                                    <p>{{album.album_name}}</p>
+                                    <p>{{album.year}}</p>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                  </div>
+                
+
+
+      
+
+  {% endfor %}
+  {% endblock %}
+
